@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ product['title'] }} | SimpleWear{% endblock %}
+{% block title %}{{ product['title'] }} | GoogleWear{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -11,9 +11,10 @@
         <div class="p-8 md:w-1/2 flex flex-col justify-center">
             <div class="uppercase tracking-wide text-sm text-indigo-600 font-bold mb-2">{{ product['category'] }}</div>
             <h1 class="text-3xl font-extrabold text-gray-900 mb-4">{{ product['title'] }}</h1>
-            <p class="mt-2 text-gray-500 leading-relaxed mb-6">{{ product['description'] }}</p>
+            <!-- Description removed as requested -->
             <div class="flex items-baseline mb-8">
-                <span class="text-4xl font-bold text-gray-900">¥{{ "{:,}".format(product['price']) }}</span>
+                <span class="text-4xl font-bold text-gray-900">{{ product['currency_code'] }} {{
+                    "{:,.2f}".format(product['price']) }}</span>
                 <span class="ml-2 text-gray-400 text-sm">税込</span>
             </div>
 

@@ -1,7 +1,9 @@
 import sqlite3
 import os
+import json
 
 DB_PATH = 'ecommerce.db'
+DATA_FILE = 'products_data.jsonl'
 
 def init_db():
     if os.path.exists(DB_PATH):
@@ -10,67 +12,59 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
+    # Updated schema: Remove description, Add currency_code, availability
     cursor.execute('''
     CREATE TABLE products (
         id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
         title TEXT NOT NULL,
         category TEXT NOT NULL,
-        description TEXT NOT NULL,
-        price INTEGER NOT NULL,
-        image_url TEXT NOT NULL
+        price REAL NOT NULL,
+        currency_code TEXT NOT NULL,
+        image_url TEXT NOT NULL,
+        availability TEXT NOT NULL
     )
     ''')
 
-    products = [
-        (
-            'p001',
-            'organic_cotton_tshirt',
-            'オーガニックコットン Tシャツ',
-            'Tops',
-            '肌触りの良い100%オーガニックコットンを使用した、シンプルで着心地の良いTシャツです。',
-            3500,
-            'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-        ),
-        (
-            'p002',
-            'slim_fit_denim',
-            'スリムフィット デニムパンツ',
-            'Bottoms',
-            'ストレッチ素材で動きやすく、シルエットが美しいスリムフィットデニム。どんなスタイルにも合わせやすい一本。',
-            8900,
-            'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-        ),
-        (
-            'p003',
-            'linen_shirt_white',
-            'リネンお出かけシャツ (白)',
-            'Tops',
-            '通気性抜群のリネン素材。夏のカジュアルスタイルから、ちょっとしたお出かけまで幅広く活躍します。',
-            6500,
-            'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-        ),
-        (
-            'p004',
-            'casual_jacket_navy',
-            'カジュアルジャケット (ネイビー)',
-            'Outerwear',
-            '軽量かつ洗練されたデザインのジャケット。オフィスでもプライベートでも使える万能アイテム。',
-            12000,
-            'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-        ),
-        (
-            'p005',
-            'canvas_sneakers',
-            'キャンバススニーカー',
-            'Shoes',
-            'クラシックなデザインのキャンバススニーカー。長時間歩いても疲れにくいクッション性の高いインソールを採用。',
-            5800,
-            'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-        )
-    ]
+    products = []
+    seen_ids = set()
+    
+    # Read from products_data.jsonl
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
+                    item = json.loads(line)
+                    
+                    # Extract fields
+                    p_id = item.get('id')
+                    title = item.get('title')
+                    
+                    # Categories is a list, join them
+                    categories_list = item.get('categories', [])
+                    category = ', '.join(categories_list) if categories_list else 'Uncategorized'
+                    
+                    # priceInfo
+                    price_info = item.get('priceInfo', {})
+                    price = price_info.get('price', 0)
+                    currency_code = price_info.get('currencyCode', 'USD')
+                    
+                    # images
+                    images = item.get('images', [])
+                    image_url = images[0].get('uri') if images else ''
+                    
+                    availability = item.get('availability', 'OUT_OF_STOCK')
 
-    cursor.executemany('INSERT INTO products (id, name, title, category, description, price, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)', products)
+                    if p_id not in seen_ids:
+                        seen_ids.add(p_id)
+                        products.append((p_id, title, category, price, currency_code, image_url, availability))
+                except json.JSONDecodeError:
+                    print(f"Skipping invalid JSON line: {line[:50]}...")
+                except Exception as e:
+                    print(f"Error processing line: {e}")
+
+    cursor.executemany('INSERT INTO products (id, title, category, price, currency_code, image_url, availability) VALUES (?, ?, ?, ?, ?, ?, ?)', products)
 
     conn.commit()
     conn.close()

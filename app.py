@@ -28,7 +28,7 @@ def index():
     query = request.args.get('q', '')
     conn = get_db()
     if query:
-        products = conn.execute('SELECT * FROM products WHERE title LIKE ? OR description LIKE ?', (f'%{query}%', f'%{query}%')).fetchall()
+        products = conn.execute('SELECT * FROM products WHERE title LIKE ?', (f'%{query}%',)).fetchall()
     else:
         products = conn.execute('SELECT * FROM products').fetchall()
     
@@ -49,6 +49,11 @@ def cart():
     total_price = 0
     conn = get_db()
     
+    # We need to know the currency code. Assuming all products have the same currency for now,
+    # or we can pass it per item. But for total, we need to be careful if currencies mix.
+    # The dataset seems to be all USD.
+    currency_code = 'USD' # Default fallback
+    
     for pid, qty in cart_session.items():
         if qty > 0:
             product = conn.execute('SELECT * FROM products WHERE id = ?', (pid,)).fetchone()
@@ -60,8 +65,10 @@ def cart():
                     'quantity': qty,
                     'item_total': item_total
                 })
+                # Capture currency from one of the products
+                currency_code = product['currency_code']
     
-    return render_template('cart.html', cart_items=cart_items, total_price=total_price)
+    return render_template('cart.html', cart_items=cart_items, total_price=total_price, currency_code=currency_code)
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():

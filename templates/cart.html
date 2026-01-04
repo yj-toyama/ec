@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}カート | SimpleWear{% endblock %}
+{% block title %}カート | GoogleWear{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
@@ -17,7 +17,8 @@
                     <div class="ml-4">
                         <div class="text-sm font-medium text-indigo-600">{{ item['product']['category'] }}</div>
                         <h3 class="text-lg font-bold text-gray-900">{{ item['product']['title'] }}</h3>
-                        <div class="text-gray-500">単価: ¥{{ "{:,}".format(item['product']['price']) }}</div>
+                        <div class="text-gray-500">単価: {{ item['product']['currency_code'] }} {{
+                            "{:,.2f}".format(item['product']['price']) }}</div>
                     </div>
                 </div>
 
@@ -34,7 +35,8 @@
                         </select>
                     </form>
 
-                    <div class="font-bold text-lg w-24 text-right">¥{{ "{:,}".format(item['item_total']) }}</div>
+                    <div class="font-bold text-lg w-24 text-right">{{ item['product']['currency_code'] }} {{
+                        "{:,.2f}".format(item['item_total']) }}</div>
 
                     <form action="{{ url_for('update_cart') }}" method="post">
                         <input type="hidden" name="product_id" value="{{ item['product']['id'] }}">
@@ -54,7 +56,7 @@
         </ul>
         <div class="bg-gray-50 p-6 flex flex-col sm:flex-row justify-between items-center border-t border-gray-200">
             <div class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">
-                合計: <span class="text-indigo-600">¥{{ "{:,}".format(total_price) }}</span>
+                合計: <span class="text-indigo-600">{{ currency_code }} {{ "{:,.2f}".format(total_price) }}</span>
             </div>
 
             <div class="flex items-center gap-6">
@@ -120,7 +122,7 @@
                     ],
     'purchaseTransaction': {
         'revenue': { { total_price } },
-        'currencyCode': 'JPY'
+        'currencyCode': '{{ currency_code }}'
     }
                 }
             });
