@@ -63,8 +63,16 @@
     document.addEventListener('DOMContentLoaded', function () {
         var products = [
             {% for product in products %}
-            { 'product': { 'id': '{{ product['id'] }}' } },
-            {% endfor %}
+            {
+            'product': {
+                'id': '{{ product['id'] }}',
+                'name': '{{ product['title'] }}',
+                'category': '{{ product['category'] }}',
+                'price': {{ product['price'] }},
+        'currencyCode': '{{ product['currency_code'] }}'
+                }
+            },
+        {% endfor %}
         ];
 
     window.dataLayer.push({

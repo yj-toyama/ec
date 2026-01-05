@@ -52,18 +52,25 @@ def index():
             response = search_vertex_ai(query)
             attribution_token = response.attribution_token
             
+            conn = get_db()
             for result in response.results:
                 p = result.product
-                # Map API product to template expectation
-                product_data = {
-                    'id': p.id,
-                    'title': p.title,
-                    'category': p.categories[0] if p.categories else 'General',
-                    'price': p.price_info.price,
-                    'currency_code': p.price_info.currency_code,
-                    'image_url': p.images[0].uri if p.images else ''
-                }
-                products.append(product_data)
+                
+                # Check if product exists in SQLite
+                # This ensures that the detail page link (which queries SQLite) will work.
+                exists = conn.execute('SELECT 1 FROM products WHERE id = ?', (p.id,)).fetchone()
+                
+                if exists:
+                    # Map API product to template expectation
+                    product_data = {
+                        'id': p.id,
+                        'title': p.title,
+                        'category': p.categories[0] if p.categories else 'General',
+                        'price': p.price_info.price,
+                        'currency_code': p.price_info.currency_code,
+                        'image_url': p.images[0].uri if p.images else ''
+                    }
+                    products.append(product_data)
                 
         except Exception as e:
             print(f"Error calling Vertex AI Search: {e}")
