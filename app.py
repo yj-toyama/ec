@@ -49,19 +49,20 @@ def index():
     if query:
         # Use Vertex AI Search
         try:
+            print(f"Searching for: {query}")
             response = search_vertex_ai(query)
             attribution_token = response.attribution_token
+            
+            print(f"Vertex AI returned {len(response.results)} results")
             
             conn = get_db()
             for result in response.results:
                 p = result.product
                 
                 # Check if product exists in SQLite
-                # This ensures that the detail page link (which queries SQLite) will work.
                 exists = conn.execute('SELECT 1 FROM products WHERE id = ?', (p.id,)).fetchone()
                 
                 if exists:
-                    # Map API product to template expectation
                     product_data = {
                         'id': p.id,
                         'title': p.title,
@@ -71,11 +72,15 @@ def index():
                         'image_url': p.images[0].uri if p.images else ''
                     }
                     products.append(product_data)
+                else:
+                    print(f"Filtered out product ID: {p.id} (not found in SQLite)")
+                    
+            print(f"Final products list size: {len(products)}")
                 
         except Exception as e:
             print(f"Error calling Vertex AI Search: {e}")
-            # Fallback or empty? User requested replacing SQLite, so maybe just show error or empty.
-            # We'll just leave products empty.
+            import traceback
+            traceback.print_exc()
             pass
             
     else:
@@ -83,7 +88,11 @@ def index():
         conn = get_db()
         products = conn.execute('SELECT * FROM products').fetchall()
     
-    return render_template('index.html', products=products, query=query, attribution_token=attribution_token)
+    return render_template('index.html', 
+                           products=products, 
+                           query=query, 
+                           attribution_token=attribution_token,
+                           visitor_id=app.config['VISITOR_ID'])
 
 @app.route('/product/<product_id>')
 def detail(product_id):
