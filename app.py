@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, g
 import sqlite3
 import os
+import google.auth
+from google.cloud.retail import SearchRequest, SearchServiceClient
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_for_demo'  # Replace in production
@@ -9,6 +11,10 @@ DB_PATH = 'ecommerce.db'
 # GTM Settings
 app.config['GTM_ID'] = 'GTM-NFMZ6FZJ' # Updated based on user request
 app.config['VISITOR_ID'] = 'visitor-12345' # Demo visitor ID
+
+# Vertex AI Search Settings
+PROJECT_ID = google.auth.default()[1] # Try to get from ADC
+DEFAULT_SEARCH_PLACEMENT = f"projects/{PROJECT_ID}/locations/global/catalogs/default_catalog/placements/default_search"
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -23,16 +29,54 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+def search_vertex_ai(query):
+    search_request = SearchRequest()
+    search_request.placement = DEFAULT_SEARCH_PLACEMENT
+    search_request.query = query
+    search_request.visitor_id = app.config['VISITOR_ID']
+    search_request.page_size = 10
+    
+    client = SearchServiceClient()
+    response = client.search(search_request)
+    return response
+
 @app.route('/')
 def index():
     query = request.args.get('q', '')
-    conn = get_db()
+    products = []
+    attribution_token = None
+    
     if query:
-        products = conn.execute('SELECT * FROM products WHERE title LIKE ?', (f'%{query}%',)).fetchall()
+        # Use Vertex AI Search
+        try:
+            response = search_vertex_ai(query)
+            attribution_token = response.attribution_token
+            
+            for result in response.results:
+                p = result.product
+                # Map API product to template expectation
+                product_data = {
+                    'id': p.id,
+                    'title': p.title,
+                    'category': p.categories[0] if p.categories else 'General',
+                    'price': p.price_info.price,
+                    'currency_code': p.price_info.currency_code,
+                    'image_url': p.images[0].uri if p.images else ''
+                }
+                products.append(product_data)
+                
+        except Exception as e:
+            print(f"Error calling Vertex AI Search: {e}")
+            # Fallback or empty? User requested replacing SQLite, so maybe just show error or empty.
+            # We'll just leave products empty.
+            pass
+            
     else:
+        # Default View - Show all products from SQLite as before
+        conn = get_db()
         products = conn.execute('SELECT * FROM products').fetchall()
     
-    return render_template('index.html', products=products, query=query)
+    return render_template('index.html', products=products, query=query, attribution_token=attribution_token)
 
 @app.route('/product/<product_id>')
 def detail(product_id):
