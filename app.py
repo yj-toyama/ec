@@ -47,52 +47,60 @@ def index():
     attribution_token = None
     
     if query:
-        # Use Vertex AI Search
         try:
             print(f"Searching for: {query}")
             response = search_vertex_ai(query)
             attribution_token = response.attribution_token
             
-            print(f"Vertex AI returned {len(response.results)} results")
-            
-            conn = get_db()
-            for result in response.results:
-                p = result.product
+            # 1. IDの取得先を result.id に修正
+            # 文字列としてリスト化します
+            vertex_ids = [str(result.id) for result in response.results]
+            print(f"Extracted IDs: {vertex_ids}")
+
+            if vertex_ids:
+                conn = get_db()
+                # SQLのIN句で一括取得
+                placeholders = ', '.join(['?'] * len(vertex_ids))
+                query_sql = f'SELECT * FROM products WHERE id IN ({placeholders})'
                 
-                # Check if product exists in SQLite
-                exists = conn.execute('SELECT 1 FROM products WHERE id = ?', (p.id,)).fetchone()
+                db_results = conn.execute(query_sql, vertex_ids).fetchall()
                 
-                if exists:
-                    product_data = {
-                        'id': p.id,
-                        'title': p.title,
-                        'category': p.categories[0] if p.categories else 'General',
-                        'price': p.price_info.price,
-                        'currency_code': p.price_info.currency_code,
-                        'image_url': p.images[0].uri if p.images else ''
-                    }
-                    products.append(product_data)
-                else:
-                    print(f"Filtered out product ID: {p.id} (not found in SQLite)")
-                    
-            print(f"Final products list size: {len(products)}")
+                # 2. 検索結果の順序（Vertex AIのスコア順）を維持するための処理
+                # DBから取得した行をIDをキーにした辞書に変換
+                product_map = {str(row['id']): row for row in db_results}
+                
+                for v_id in vertex_ids:
+                    if v_id in product_map:
+                        row = product_map[v_id]
+                        # テンプレートに渡す形式に変換
+                        products.append({
+                            'id': row['id'],
+                            'title': row['title'],
+                            'category': row['category'],
+                            'price': row['price'],
+                            'image_url': row['image_url']
+                        })
+                    else:
+                        print(f"ID {v_id} found in Vertex AI but NOT in Local DB")
+
+            print(f"Final products count: {len(products)}")
                 
         except Exception as e:
-            print(f"Error calling Vertex AI Search: {e}")
+            print(f"Error: {e}")
             import traceback
             traceback.print_exc()
-            pass
             
     else:
-        # Default View - Show all products from SQLite as before
+        # デフォルト表示（クエリなしの場合）
         conn = get_db()
-        products = conn.execute('SELECT * FROM products').fetchall()
+        db_products = conn.execute('SELECT * FROM products').fetchall()
+        products = [dict(row) for row in db_products]
     
     return render_template('index.html', 
                            products=products, 
                            query=query, 
                            attribution_token=attribution_token,
-                           visitor_id=app.config['VISITOR_ID'])
+                           visitor_id=app.config.get('VISITOR_ID'))
 
 @app.route('/product/<product_id>')
 def detail(product_id):
