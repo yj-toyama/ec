@@ -138,6 +138,7 @@ def cart():
     
     # Check for last_added_item for GTM event
     last_added_item = session.pop('last_added_item', None)
+    print(f"DEBUG: Retrieved last_added_item from session: {last_added_item}")
     
     return render_template('cart.html', 
                            cart_items=cart_items, 
@@ -169,6 +170,9 @@ def add_to_cart():
             'quantity': quantity
         }
         session.modified = True # Ensure session is saved
+        print(f"DEBUG: Stored last_added_item in session: {session['last_added_item']}")
+    else:
+        print(f"DEBUG: Product {product_id} not found, cannot store in session.")
     
     return redirect(url_for('cart'))
 

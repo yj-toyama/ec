@@ -50,20 +50,22 @@
 </div>
 
 <!-- GTM Scripts -->
-// Detail Page View (Fired on Page Load)
-window.dataLayer.push({'cloud_retail': undefined});
-window.dataLayer.push({
-event: "detail-page-view",
-'cloud_retail': {
-'eventType': 'detail-page-view',
-'visitorId': '{{ visitor_id }}',
-'productDetails': [{
-'product': { 'id': '{{ product['id'] }}' }
-}]
-}
-});
+<script>
+    // Detail Page View (Fired on Page Load)
+    window.dataLayer.push({ 'cloud_retail': undefined });
+    window.dataLayer.push({
+        event: "detail-page-view",
+        'cloud_retail': {
+            'eventType': 'detail-page-view',
+            'visitorId': '{{ visitor_id }}',
+            'productDetails': [{
+                'product': { 'id': '{{ product['id'] }}' }
+            }]
+        }
+    });
 
-// Add to Cart Event handled in cart.html via session flash to avoid race condition
+    // Add to Cart Event handled in cart.html via session flash to avoid race condition
+</script>
 
 </script>
 
