@@ -53,26 +53,27 @@
     function generateEventTime() {
         const now = new Date();
         // toISOString() は 'YYYY-MM-DDTHH:mm:ss.sssZ' 形式のUTC文字列を返す
-        const isoStringMilliseconds = now.toISOString(); 
+        const isoStringMilliseconds = now.toISOString();
 
-       // ミリ秒(sss)の後ろに '000' を追加してマイクロ秒(ffffff)のフォーマットに合わせる
+        // ミリ秒(sss)の後ろに '000' を追加してマイクロ秒(ffffff)のフォーマットに合わせる
         const timePart = isoStringMilliseconds.slice(0, -1); // 末尾の 'Z' を除去
-        const microsecondFormattedTime = timePart + '000Z'; 
+        const microsecondFormattedTime = timePart + '000Z';
         // フォーマットされたeventTime文字列を返す
-        return microsecondFormattedTime; 
-        }
+        return microsecondFormattedTime;
+    }
 
     // Home Page View
-    window.dataLayer.push({'cloud_retail': undefined});
+    window.dataLayer.push({ 'cloud_retail': undefined });
     window.dataLayer.push({
-      event: "home-page-view",
-      'cloud_retail': {
-        'eventType': 'home-page-view',
-        'visitorId': '{{ visitor_id }}',
-        // You can also define the visitor ID and user ID
-        // directly on the Tag Manager tag.
-        'eventTime': generateEventTime(),
-    }});
+        event: "home-page-view",
+        'cloud_retail': {
+            'eventType': 'home-page-view',
+            'visitorId': '{{ visitor_id }}',
+            // You can also define the visitor ID and user ID
+            // directly on the Tag Manager tag.
+            'eventTime': generateEventTime(),
+        }
+    });
 
     // Search Event
     {% if query %}
@@ -91,7 +92,7 @@
         {% endfor %}
         ];
 
-    window.dataLayer.push({'cloud_retail': undefined});
+    window.dataLayer.push({ 'cloud_retail': undefined });
     window.dataLayer.push({
         event: "search",
         'cloud_retail': {
@@ -107,26 +108,8 @@
     {% endif %}
 
     // Detail Button Click Event
-    document.querySelectorAll('.detail-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            var productId = this.getAttribute('data-product-id');
-            window.dataLayer.push({'cloud_retail': undefined});
-            window.dataLayer.push({
-                event: "detail-page-view",
-                'cloud_retail': {
-                    'eventType': 'detail-page-view',
-                    // Note: Usually detail-page-view fires ON the detail page, but the prompt says 
-                    // "Home画面 商品ボタン(商品詳細画面へ遷移するボタン): ... eventType: detail-page-view"
-                    // So we fire it here before navigation (or let standard link navigation happen and fire it).
-                    // Since it's a link, we might miss the event if we don't preventDefault, but standard GTM click triggers handle this.
-                    // However, to strictly follow "push dataLayer code" logic:
-                    'visitorId': '{{ visitor_id }}',
-                    'productDetails': [{
-                        'product': { 'id': productId }
-                    }]
-                }
-            });
-        });
-    });
+    // Previously fired 'detail-page-view' here, but it caused issues with page transition overwriting GTM state.
+    // Now 'detail-page-view' is fired on the Detail page load itself (detail.html).
+
 </script>
 {% endblock %}

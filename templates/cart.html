@@ -87,6 +87,31 @@
 
 <!-- GTM Scripts -->
 <script>
+    // Debugging
+    console.log('Cart Page Loaded');
+
+    // Add to Cart Event (Fired FIRST to ensure it's processed before page view)
+    {% if last_added_item %}
+    console.log('Add to Cart Event Triggering...');
+    window.dataLayer.push({ 'cloud_retail': undefined });
+    window.dataLayer.push({
+        event: "add-to-cart",
+        'cloud_retail': {
+            'eventType': 'add-to-cart',
+            'visitorId': '{{ visitor_id }}',
+            'productDetails': [{
+                'product': {
+                    'id': '{{ last_added_item['id'] }}'
+                },
+                'quantity': {{ last_added_item['quantity'] }}
+    }]
+        }
+    });
+    console.log('Add to Cart Event Pushed');
+    {% else %}
+    console.log('No item added to cart in this session transition.');
+    {% endif %}
+
     // Shopping Cart Page View
     window.dataLayer.push({ 'cloud_retail': undefined });
     window.dataLayer.push({
@@ -106,25 +131,6 @@
       }
     });
 
-    // Add to Cart Event (Fired on page load if item was just added)
-    {% if last_added_item %}
-    window.dataLayer.push({ 'cloud_retail': undefined });
-    window.dataLayer.push({
-        event: "add-to-cart",
-        'cloud_retail': {
-            'eventType': 'add-to-cart',
-            'visitorId': '{{ visitor_id }}',
-            'productDetails': [{
-                'product': {
-                    'id': '{{ last_added_item['id'] }}'
-                },
-                'quantity': {{ last_added_item['quantity'] }}
-    }]
-        }
-    });
-    {% endif %}
-
     // Purchase Complete Event handled in complete.html to avoid race condition
-
 </script>
 {% endblock %}

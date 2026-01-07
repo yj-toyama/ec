@@ -168,6 +168,7 @@ def add_to_cart():
             'currency_code': product['currency_code'],
             'quantity': quantity
         }
+        session.modified = True # Ensure session is saved
     
     return redirect(url_for('cart'))
 
