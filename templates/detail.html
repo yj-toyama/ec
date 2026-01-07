@@ -53,8 +53,8 @@
 <script>
     // Detail Page View
     // Usually detail-page-view fires on page load of the detail page.
-    // The prompt listed "Home画面 商品ボタン" triggering 'detail-page-view', but typically 
-    // the page view event should happen on the page itself as well or instead. 
+    // The prompt listed "Home画面 商品ボタン" triggering 'detail-page-view', but typically
+    // the page view event should happen on the page itself as well or instead.
     // The prompt *also* listed "商品詳細画面 カートに追加ボタン: add-to-cart".
     // It didn't explicitly ask for 'detail-page-view' ON the detail page load, but it's standard practice.
     // However, I will stick to what was requested for the buttons.
@@ -63,24 +63,8 @@
     // This implies the event is tracked on the CLICK from Home.
     // But then on the Detail page, we have "商品詳細画面 カートに追加ボタン".
 
-    // Add to Cart Event
-    document.getElementById('add-to-cart-btn').addEventListener('click', function () {
-        var quantity = document.getElementById('quantity').value;
-        window.dataLayer.push({'cloud_retail': undefined});
-        window.dataLayer.push({
-            event: "add-to-cart",
-            'cloud_retail': {
-                'eventType': 'add-to-cart',
-                'visitorId': '{{ visitor_id }}',
-                'productDetails': [{
-                    'product': {
-                        'id': '{{ product.id }}'
-                    },
-                    'quantity': parseInt(quantity)
-                }]
-            }
-        });
-    });
+    // Add to Cart Event handled in cart.html via session flash to avoid race condition
+
 </script>
 
 {% endblock %}

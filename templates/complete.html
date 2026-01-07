@@ -17,4 +17,30 @@
         Homeに戻る
     </a>
 </div>
+
+<!-- GTM Scripts -->
+<script>
+    {% if order_items %}
+    window.dataLayer.push({ 'cloud_retail': undefined });
+    window.dataLayer.push({
+        event: "purchase-complete",
+        'cloud_retail': {
+            'eventType': 'purchase-complete',
+            'visitorId': '{{ visitor_id }}',
+            'productDetails': [
+                {% for item in order_items %}
+                {
+            'product': { 'id': '{{ item['product']['id'] }}' },
+            'quantity': {{ item['quantity'] }}
+                },
+        {% endfor %}
+            ],
+        'purchaseTransaction': {
+        'revenue': {{ total_price }},
+        'currencyCode': '{{ currency_code }}'
+            }
+        }
+    });
+    {% endif %}
+</script>
 {% endblock %}

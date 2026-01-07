@@ -136,7 +136,14 @@ def cart():
                 # Capture currency from one of the products
                 currency_code = product['currency_code']
     
-    return render_template('cart.html', cart_items=cart_items, total_price=total_price, currency_code=currency_code)
+    # Check for last_added_item for GTM event
+    last_added_item = session.pop('last_added_item', None)
+    
+    return render_template('cart.html', 
+                           cart_items=cart_items, 
+                           total_price=total_price, 
+                           currency_code=currency_code,
+                           last_added_item=last_added_item)
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
@@ -148,6 +155,19 @@ def add_to_cart():
     current_qty = cart_session.get(product_id, 0)
     cart_session[product_id] = current_qty + quantity
     session['cart'] = cart_session
+    
+    # Store added item details in session for GTM event on next page load
+    conn = get_db()
+    product = conn.execute('SELECT * FROM products WHERE id = ?', (product_id,)).fetchone()
+    if product:
+        session['last_added_item'] = {
+            'id': product['id'],
+            'price': product['price'],
+            'name': product['title'],
+            'category': product['category'],
+            'currency_code': product['currency_code'],
+            'quantity': quantity
+        }
     
     return redirect(url_for('cart'))
 
@@ -176,17 +196,32 @@ def update_cart():
 
 @app.route('/complete')
 def complete():
-    # Capture revenue before clearing cart for GTM (if needed server side, but user asked for client side)
-    # Actually client side needs product details for the purchase event.
-    # To pass data to the GTM purchase event efficiently, we might want to pass the last purchase details to the template
-    # But for now, we just clear the cart. 
-    # WAIT: The prompt says Purchase Complete page needs to show "Thank you".
-    # And the dataLayer event for purchase is triggered ON THE BUTTON CLICK in the Cart page.
-    # So we don't necessarily need to pass data here for the event itself, but good practice might be to show summary.
-    # User's requirement for GTM is specifically attached to the buttons.
+    # Capture revenue and items before clearing cart for GTM purchase event
+    cart_session = session.get('cart', {})
+    conn = get_db()
     
+    order_items = []
+    total_price = 0
+    currency_code = 'USD'
+    
+    for pid, qty in cart_session.items():
+        if qty > 0:
+            product = conn.execute('SELECT * FROM products WHERE id = ?', (pid,)).fetchone()
+            if product:
+                item_total = product['price'] * qty
+                total_price += item_total
+                order_items.append({
+                    'product': dict(product), # Convert Row to dict for safer template usage if needed
+                    'quantity': qty
+                })
+                currency_code = product['currency_code']
+
     session.pop('cart', None)
-    return render_template('complete.html')
+    
+    return render_template('complete.html', 
+                           order_items=order_items, 
+                           total_price=total_price, 
+                           currency_code=currency_code)
 
 @app.context_processor
 def inject_gtm():

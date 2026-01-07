@@ -88,49 +88,43 @@
 <!-- GTM Scripts -->
 <script>
     // Shopping Cart Page View
-    window.dataLayer.push({'cloud_retail': undefined});
+    window.dataLayer.push({ 'cloud_retail': undefined });
     window.dataLayer.push({
         event: "shopping-cart-page-view",
         'cloud_retail': {
             'eventType': 'shopping-cart-page-view',
             'visitorId': '{{ visitor_id }}',
-            'cartId': 'cart-{{ visitor_id }}', // Demo cart ID
+            'cartId': 'cart-{{ visitor_id }}',
             'productDetails': [
                 {% for item in cart_items %}
             {
-            'product': { 'id': '{{ item.product.id }}' },
-            'quantity': {{ item.quantity }}
+            'product': { 'id': '{{ item['product']['id'] }}' },
+            'quantity': {{ item['quantity'] }}
             },
         {% endfor %}
         ]
       }
     });
 
-    // Purchase Complete Event on Button Click
-    var purchaseBtn = document.getElementById('purchase-btn');
-    if (purchaseBtn) {
-        purchaseBtn.addEventListener('click', function () {
-            window.dataLayer.push({'cloud_retail': undefined});
-            window.dataLayer.push({
-                event: "purchase-complete",
-                'cloud_retail': {
-                    'eventType': 'purchase-complete',
-                    'visitorId': '{{ visitor_id }}',
-                    'productDetails': [
-                        {% for item in cart_items %}
-                        {
-                    'product': { 'id': '{{ item.product.id }}' },
-                    'quantity': {{ item.quantity }}
-                        },
-    {% endfor %}
-                    ],
-    'purchaseTransaction': {
-        'revenue': { { total_price } },
-        'currencyCode': '{{ currency_code }}'
-    }
-                }
-            });
-        });
-    }
+    // Add to Cart Event (Fired on page load if item was just added)
+    {% if last_added_item %}
+    window.dataLayer.push({ 'cloud_retail': undefined });
+    window.dataLayer.push({
+        event: "add-to-cart",
+        'cloud_retail': {
+            'eventType': 'add-to-cart',
+            'visitorId': '{{ visitor_id }}',
+            'productDetails': [{
+                'product': {
+                    'id': '{{ last_added_item['id'] }}'
+                },
+                'quantity': {{ last_added_item['quantity'] }}
+    }]
+        }
+    });
+    {% endif %}
+
+    // Purchase Complete Event handled in complete.html to avoid race condition
+
 </script>
 {% endblock %}
