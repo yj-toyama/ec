@@ -66,7 +66,9 @@
     // Add to Cart Event
     document.getElementById('add-to-cart-btn').addEventListener('click', function () {
         var quantity = document.getElementById('quantity').value;
+        window.dataLayer.push({'cloud_retail': undefined});
         window.dataLayer.push({
+            event: "add-to-cart",
             'cloud_retail': {
                 'eventType': 'add-to-cart',
                 'visitorId': '{{ visitor_id }}',
@@ -80,4 +82,5 @@
         });
     });
 </script>
+
 {% endblock %}
