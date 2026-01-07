@@ -72,7 +72,7 @@ def index():
                 for v_id in vertex_ids:
                     if v_id in product_map:
                         row = product_map[v_id]
-                        # テンプレートに渡す形式に変換
+                        # テンプレートに渡す形式に変換する
                         products.append({
                             'id': row['id'],
                             'title': row['title'],
