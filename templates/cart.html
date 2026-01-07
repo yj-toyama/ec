@@ -88,7 +88,9 @@
 <!-- GTM Scripts -->
 <script>
     // Shopping Cart Page View
+    window.dataLayer.push({'cloud_retail': undefined});
     window.dataLayer.push({
+        event: "shopping-cart-page-view",
         'cloud_retail': {
             'eventType': 'shopping-cart-page-view',
             'visitorId': '{{ visitor_id }}',
@@ -108,7 +110,9 @@
     var purchaseBtn = document.getElementById('purchase-btn');
     if (purchaseBtn) {
         purchaseBtn.addEventListener('click', function () {
+            window.dataLayer.push({'cloud_retail': undefined});
             window.dataLayer.push({
+                event: "purchase-complete",
                 'cloud_retail': {
                     'eventType': 'purchase-complete',
                     'visitorId': '{{ visitor_id }}',
