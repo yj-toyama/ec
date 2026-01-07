@@ -109,10 +109,8 @@
     });
     console.log('Add to Cart Event Pushed');
     {% else %}
-    console.log('No item added to cart in this session transition.');
-    {% endif %}
-
-    // Shopping Cart Page View
+    // Shopping Cart Page View (Fired ONLY if not adding to cart)
+    console.log('Shopping Cart Page View Triggering...');
     window.dataLayer.push({ 'cloud_retail': undefined });
     window.dataLayer.push({
         event: "shopping-cart-page-view",
@@ -130,6 +128,7 @@
         ]
       }
     });
+    {% endif %}
 
     // Purchase Complete Event handled in complete.html to avoid race condition
 </script>
